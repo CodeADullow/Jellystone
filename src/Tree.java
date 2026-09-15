@@ -105,11 +105,22 @@ public class Tree implements Burnable {
     }
 
     public void advanceBurning() {
+        advanceBurning(1.0);
+    }
+
+    public void advanceBurning(double burnRateMultiplier) {
+        if (!Double.isFinite(burnRateMultiplier)
+                || burnRateMultiplier < 0.0) {
+            throw new IllegalArgumentException(
+                    "Burn rate multiplier must be finite and non-negative"
+            );
+        }
+
         if (!burning || !alive) {
             return;
         }
 
-        damage(30.0 * burnIntensity);
+        damage(30.0 * burnIntensity * burnRateMultiplier);
     }
 
     @Override

@@ -4,6 +4,7 @@ public class TreeCellTest {
         testDefaultTreeType();
         testSubclassTreeTypes();
         testBurning();
+        testWindIncreasesBurnRate();
         testDamageAndDeath();
         testCellRemoval();
         testValidation();
@@ -113,6 +114,26 @@ public class TreeCellTest {
         check(
                 !tree.isBurning(),
                 "Dead tree should not be able to ignite"
+        );
+    }
+
+    private static void testWindIncreasesBurnRate() {
+        Forest calmForest = new Forest(1, 1);
+        Tree calmTree = new Tree(0.5);
+        calmForest.getGrid()[0][0].plantTree(calmTree);
+        calmTree.ignite();
+        calmForest.update();
+
+        Forest windyForest = new Forest(1, 1);
+        Tree windyTree = new Tree(0.5);
+        windyForest.getGrid()[0][0].plantTree(windyTree);
+        windyForest.setWind(new Wind(100.0, "EAST", 0, 0, 0));
+        windyTree.ignite();
+        windyForest.update();
+
+        check(
+                windyTree.getHealth() < calmTree.getHealth(),
+                "Wind-exposed trees should burn faster"
         );
     }
 

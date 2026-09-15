@@ -18,6 +18,14 @@ public class WindVisualization extends JPanel {
     protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
 
+        paintWindBorders(graphics, getWidth(), getHeight());
+    }
+
+    public void paintWindBorders(
+            Graphics graphics,
+            int width,
+            int height) {
+
         Cell[][] grid = forest.getGrid();
 
         if (grid.length == 0 || grid[0].length == 0) {
@@ -28,8 +36,8 @@ public class WindVisualization extends JPanel {
         borderGraphics.setColor(new Color(0, 160, 255));
         borderGraphics.setStroke(new BasicStroke(2.0f));
 
-        int cellWidth = getWidth() / grid[0].length;
-        int cellHeight = getHeight() / grid.length;
+        int cellWidth = width / grid[0].length;
+        int cellHeight = height / grid.length;
 
         for (int row = 0; row < grid.length; row++) {
 

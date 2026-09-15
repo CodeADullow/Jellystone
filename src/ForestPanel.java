@@ -10,6 +10,7 @@ public class ForestPanel extends JPanel {
 
     private Lightning lightning;
     private Image lightningImage;
+    private WindVisualization windVisualization;
 
     private Cell lastLightningCell;
     private long lightningStartTime;
@@ -17,6 +18,7 @@ public class ForestPanel extends JPanel {
     public ForestPanel(Forest forest, Lightning lightning) {
         this.forest = forest;
         this.lightning = lightning;
+        this.windVisualization = new WindVisualization(forest);
 
         System.out.println(new java.io.File("images/tree.png").exists());
         System.out.println(new java.io.File("images/fire.png").exists());
@@ -106,5 +108,11 @@ public class ForestPanel extends JPanel {
                 }
             }
         }
+
+        windVisualization.paintWindBorders(
+                g,
+                getWidth(),
+                getHeight()
+        );
     }
 }

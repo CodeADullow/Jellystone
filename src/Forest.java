@@ -73,7 +73,12 @@ public class Forest {
                 Tree tree = cell.getTree();
 
                 if (tree.isBurning()) {
-                    tree.advanceBurning();
+                    double windExposure = Math.max(
+                            0.0,
+                            Math.min(1.0, cell.getWindExposure())
+                    );
+
+                    tree.advanceBurning(1.0 + windExposure);
                 }
 
                 if (!tree.isAlive()) {
