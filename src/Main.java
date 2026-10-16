@@ -1,4 +1,5 @@
 import javax.swing.*;
+import java.awt.BorderLayout;
 import java.util.Random;
 
 public class Main {
@@ -44,7 +45,14 @@ public class Main {
 
         ForestPanel panel = new ForestPanel(forest, lightning);
 
-        window.add(panel);
+        JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.add(panel, BorderLayout.CENTER);
+        contentPanel.add(
+                new ControlPanel(forest),
+                BorderLayout.EAST
+        );
+
+        window.setContentPane(contentPanel);
 
         window.setSize(900, 600);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
