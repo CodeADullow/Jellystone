@@ -44,11 +44,12 @@ public class Main {
         JFrame window = new JFrame("Forest Fire Simulation");
 
         ForestPanel panel = new ForestPanel(forest, lightning);
+        ControlPanel controlPanel = new ControlPanel(forest);
 
         JPanel contentPanel = new JPanel(new BorderLayout());
         contentPanel.add(panel, BorderLayout.CENTER);
         contentPanel.add(
-                new ControlPanel(forest),
+                controlPanel,
                 BorderLayout.EAST
         );
 
@@ -64,9 +65,35 @@ public class Main {
             forest.update();
 
             panel.repaint();
+            controlPanel.refresh();
 
         });
 
         timer.start();
     }
 }
+
+// DONT CHANGE THE CODE BELOW. IDEAS from Week 10 & 11
+//
+// For boundless grid, keep track of not only trees but a biome or group of trees; in memory block, when move back down and then move back up, create biome based on a number tag made
+
+
+//
+// Colour map can be used for statistics; represents biomes, trees, fires and wind.
+
+
+//
+// Collect data from trees
+
+
+//
+//
+
+
+
+// Filter which fire group has a strong centerpoint (which firecell has more surrounding firecells) and a weaker centerpoint (random shortest firecell).
+
+
+
+//
+// Type down coordinates of a cell, highlight a cell and provide statistics for it in the panel

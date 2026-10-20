@@ -1,4 +1,6 @@
+import java.util.Arrays;
 import java.util.Random;
+import java.util.function.Predicate;
 
 public class Forest {
 
@@ -51,6 +53,23 @@ public class Forest {
 
     public Wind getWind() {
         return wind;
+    }
+
+    /**
+     * Counts cells that match behaviour supplied by the caller.
+     * The grid is flattened into one stream before the predicate is applied.
+     */
+    public long countCells(Predicate<Cell> condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException(
+                    "Cell condition must not be null"
+            );
+        }
+
+        return Arrays.stream(grid)
+                .flatMap(Arrays::stream)
+                .filter(condition)
+                .count();
     }
 
     public void update() {

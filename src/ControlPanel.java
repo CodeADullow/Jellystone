@@ -8,7 +8,14 @@ import javax.swing.JPanel;
 
 public class ControlPanel extends JPanel {
 
+    private Forest forest;
+    private JLabel treeCountLabel;
+    private JLabel burningCountLabel;
+    private JLabel windCountLabel;
+
     public ControlPanel(Forest forest) {
+        this.forest = forest;
+
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setPreferredSize(new Dimension(180, 0));
         setBackground(new Color(235, 235, 235));
@@ -20,6 +27,12 @@ public class ControlPanel extends JPanel {
         Cell[][] grid = forest.getGrid();
         addLabel("Rows: " + grid.length);
         addLabel("Columns: " + grid[0].length);
+
+        add(Box.createVerticalStrut(15));
+        addLabel("Live statistics");
+        treeCountLabel = addLabel("");
+        burningCountLabel = addLabel("");
+        windCountLabel = addLabel("");
 
         Wind wind = forest.getWind();
 
@@ -36,12 +49,29 @@ public class ControlPanel extends JPanel {
         addLabel("Tree: green image");
         addLabel("Fire: flame image");
         addLabel("Wind: blue border");
+
+        refresh();
     }
 
-    private void addLabel(String text) {
+    public void refresh() {
+        long trees = forest.countCells(Cell::hasTree);
+        long burningTrees = forest.countCells(
+                cell -> cell.hasTree() && cell.getTree().isBurning()
+        );
+        long windAffectedCells = forest.countCells(
+                cell -> cell.getWindExposure() > 0.0
+        );
+
+        treeCountLabel.setText("Trees: " + trees);
+        burningCountLabel.setText("Burning: " + burningTrees);
+        windCountLabel.setText("Wind affected: " + windAffectedCells);
+    }
+
+    private JLabel addLabel(String text) {
         JLabel label = new JLabel(text);
         label.setAlignmentX(LEFT_ALIGNMENT);
         add(label);
         add(Box.createVerticalStrut(5));
+        return label;
     }
 }
