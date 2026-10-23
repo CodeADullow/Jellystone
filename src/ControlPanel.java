@@ -12,6 +12,7 @@ public class ControlPanel extends JPanel {
     private JLabel treeCountLabel;
     private JLabel burningCountLabel;
     private JLabel windCountLabel;
+    private JLabel positionLabel;
 
     public ControlPanel(Forest forest) {
         this.forest = forest;
@@ -27,6 +28,8 @@ public class ControlPanel extends JPanel {
         Cell[][] grid = forest.getGrid();
         addLabel("Rows: " + grid.length);
         addLabel("Columns: " + grid[0].length);
+        positionLabel = addLabel("");
+        addLabel("Move: W A S D");
 
         add(Box.createVerticalStrut(15));
         addLabel("Live statistics");
@@ -65,6 +68,10 @@ public class ControlPanel extends JPanel {
         treeCountLabel.setText("Trees: " + trees);
         burningCountLabel.setText("Burning: " + burningTrees);
         windCountLabel.setText("Wind affected: " + windAffectedCells);
+        positionLabel.setText(
+                "Position: " + forest.getOriginX()
+                        + ", " + forest.getOriginY()
+        );
     }
 
     private JLabel addLabel(String text) {

@@ -1,4 +1,5 @@
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import javax.swing.*;
 
 public class ForestPanel extends JPanel {
@@ -27,6 +28,29 @@ public class ForestPanel extends JPanel {
         treeImage = new ImageIcon("images/tree.png").getImage();
         fireImage = new ImageIcon("images/fire.png").getImage();
         lightningImage = new ImageIcon("images/lightning.png").getImage();
+
+        addMovementKey("W", 0, -1);
+        addMovementKey("A", -1, 0);
+        addMovementKey("S", 0, 1);
+        addMovementKey("D", 1, 0);
+    }
+
+    private void addMovementKey(
+            String key,
+            int changeX,
+            int changeY) {
+
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(
+                KeyStroke.getKeyStroke(key),
+                key
+        );
+        getActionMap().put(key, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                forest.moveView(changeX, changeY);
+                repaint();
+            }
+        });
     }
 
     @Override

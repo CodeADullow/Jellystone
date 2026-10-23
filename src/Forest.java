@@ -13,6 +13,10 @@ public class Forest {
     private Wind wind;
 
     private Random random = new Random();
+    private Cell[] worldCells = new Cell[100];
+    private int worldCellCount;
+    private int originX;
+    private int originY;
 
     public Forest(int rows, int columns) {
 
@@ -26,18 +30,7 @@ public class Forest {
 
             for (int col = 0; col < columns; col++) {
 
-                grid[row][col] = new Cell(row, col);
-
-                // 80% chance of there being a tree
-                if (random.nextDouble() < 0.8) {
-
-                    double spreadability =
-                            0.3 + random.nextDouble() * 0.7;
-
-                    grid[row][col].plantTree(
-                            new Tree(spreadability)
-                    );
-                }
+                grid[row][col] = getOrCreateCell(col, row);
             }
         }
     }
@@ -55,10 +48,72 @@ public class Forest {
         return wind;
     }
 
-    /**
-     * Counts cells that match behaviour supplied by the caller.
-     * The grid is flattened into one stream before the predicate is applied.
-     */
+    public int getOriginX() {
+        return originX;
+    }
+
+    public int getOriginY() {
+        return originY;
+    }
+
+    public void moveView(int changeX, int changeY) {
+        originX += changeX;
+        originY += changeY;
+
+        for (int row = 0; row < grid.length; row++) {
+            for (int col = 0; col < grid[row].length; col++) {
+                int worldX = originX + col;
+                int worldY = originY + row;
+                grid[row][col] = getOrCreateCell(worldX, worldY);
+            }
+        }
+
+        if (wind != null) {
+            wind.applyWind(this);
+        }
+    }
+
+    public Cell[] getVisibleCellsSorted() {
+        Cell[] cells = Arrays.stream(grid)
+                .flatMap(Arrays::stream)
+                .toArray(Cell[]::new);
+
+        CellHeapSort.sort(cells);
+        return cells;
+    }
+
+    private Cell getOrCreateCell(int worldX, int worldY) {
+        for (int index = 0; index < worldCellCount; index++) {
+            Cell storedCell = worldCells[index];
+
+            if (storedCell.getX() == worldX
+                    && storedCell.getY() == worldY) {
+                return storedCell;
+            }
+        }
+
+        Cell cell = new Cell(worldX, worldY);
+
+        if (random.nextDouble() < 0.8) {
+            double spreadability =
+                    0.3 + random.nextDouble() * 0.7;
+            cell.plantTree(new Tree(spreadability));
+        }
+
+        if (worldCellCount == worldCells.length) {
+            worldCells = Arrays.copyOf(
+                    worldCells,
+                    worldCells.length * 2
+            );
+        }
+
+        worldCells[worldCellCount] = cell;
+        worldCellCount++;
+        return cell;
+    }
+
+
+    // Grid is simplified into a 2D array of cells, stream used to compile list of cells that match predicate, return count.
     public long countCells(Predicate<Cell> condition) {
         if (condition == null) {
             throw new IllegalArgumentException(
