@@ -1,8 +1,13 @@
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
-public class Forest {
+public class Forest implements Iterable<Cell> {
 
     private Cell[][] grid;
 
@@ -17,6 +22,7 @@ public class Forest {
     private int worldCellCount;
     private int originX;
     private int originY;
+    private SimulationState simulationState = new RunningState();
 
     public Forest(int rows, int columns) {
 
@@ -39,6 +45,39 @@ public class Forest {
         return grid;
     }
 
+    @Override
+    public Iterator<Cell> iterator() {
+        return new ForestIterator();
+    }
+
+    private class ForestIterator implements Iterator<Cell> {
+
+        private int row;
+        private int column;
+
+        @Override
+        public boolean hasNext() {
+            return row < grid.length;
+        }
+
+        @Override
+        public Cell next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("No more forest cells");
+            }
+
+            Cell cell = grid[row][column];
+            column++;
+
+            if (column == grid[row].length) {
+                column = 0;
+                row++;
+            }
+
+            return cell;
+        }
+    }
+
     public void setWind(Wind wind) {
         this.wind = wind;
         wind.applyWind(this);
@@ -54,6 +93,18 @@ public class Forest {
 
     public int getOriginY() {
         return originY;
+    }
+
+    public void toggleSimulationState() {
+        if (simulationState instanceof RunningState) {
+            simulationState = new PausedState();
+        } else {
+            simulationState = new RunningState();
+        }
+    }
+
+    public String getSimulationStateName() {
+        return simulationState.getName();
     }
 
     public void moveView(int changeX, int changeY) {
@@ -97,7 +148,7 @@ public class Forest {
         if (random.nextDouble() < 0.8) {
             double spreadability =
                     0.3 + random.nextDouble() * 0.7;
-            cell.plantTree(new Tree(spreadability));
+            cell.plantTree(createRandomTree(spreadability));
         }
 
         if (worldCellCount == worldCells.length) {
@@ -110,6 +161,14 @@ public class Forest {
         worldCells[worldCellCount] = cell;
         worldCellCount++;
         return cell;
+    }
+
+    private Tree createRandomTree(double spreadability) {
+        if (random.nextBoolean()) {
+            return new Oak(spreadability);
+        }
+
+        return new Eucalyptus(spreadability);
     }
 
 
@@ -127,37 +186,80 @@ public class Forest {
                 .count();
     }
 
+    // Groups visible trees by species and counts each group.
+    public Map<String, Long> getTreePopulationByType() {
+        return Arrays.stream(grid)
+                .flatMap(Arrays::stream)
+                .filter(Cell::hasTree)
+                .map(Cell::getTree)
+                .collect(Collectors.groupingBy(
+                        Tree::getTreeType,
+                        TreeMap::new,
+                        Collectors.counting()
+                ));
+    }
+
     public void update() {
+        simulationState.update();
+    }
+
+    private void performUpdate() {
 
         spreadFire();
         advanceBurningTrees();
     }
 
+    private interface SimulationState {
+
+        void update();
+
+        String getName();
+    }
+
+    private class RunningState implements SimulationState {
+        @Override
+        public void update() {
+            performUpdate();
+        }
+
+        @Override
+        public String getName() {
+            return "RUNNING";
+        }
+    }
+
+    private class PausedState implements SimulationState {
+        @Override
+        public void update() {
+        }
+
+        @Override
+        public String getName() {
+            return "PAUSED";
+        }
+    }
+
 
     private void advanceBurningTrees() {
 
-        for (Cell[] row : grid) {
+        for (Cell cell : this) {
+            if (!cell.hasTree()) {
+                continue;
+            }
 
-            for (Cell cell : row) {
+            Tree tree = cell.getTree();
 
-                if (!cell.hasTree()) {
-                    continue;
-                }
+            if (tree.isBurning()) {
+                double windExposure = Math.max(
+                        0.0,
+                        Math.min(1.0, cell.getWindExposure())
+                );
 
-                Tree tree = cell.getTree();
+                tree.advanceBurning(1.0 + windExposure);
+            }
 
-                if (tree.isBurning()) {
-                    double windExposure = Math.max(
-                            0.0,
-                            Math.min(1.0, cell.getWindExposure())
-                    );
-
-                    tree.advanceBurning(1.0 + windExposure);
-                }
-
-                if (!tree.isAlive()) {
-                    cell.removeTree();
-                }
+            if (!tree.isAlive()) {
+                cell.removeTree();
             }
         }
     }

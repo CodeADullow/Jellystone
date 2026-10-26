@@ -1,8 +1,10 @@
 import java.awt.Color;
 import java.awt.Dimension;
+import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
@@ -13,6 +15,8 @@ public class ControlPanel extends JPanel {
     private JLabel burningCountLabel;
     private JLabel windCountLabel;
     private JLabel positionLabel;
+    private JLabel speciesLabel;
+    private JLabel stateLabel;
 
     public ControlPanel(Forest forest) {
         this.forest = forest;
@@ -30,12 +34,22 @@ public class ControlPanel extends JPanel {
         addLabel("Columns: " + grid[0].length);
         positionLabel = addLabel("");
         addLabel("Move: W A S D");
+        stateLabel = addLabel("");
+
+        JButton stateButton = new JButton("Pause / Resume");
+        stateButton.setAlignmentX(LEFT_ALIGNMENT);
+        stateButton.addActionListener(event -> {
+            forest.toggleSimulationState();
+            refresh();
+        });
+        add(stateButton);
 
         add(Box.createVerticalStrut(15));
         addLabel("Live statistics");
         treeCountLabel = addLabel("");
         burningCountLabel = addLabel("");
         windCountLabel = addLabel("");
+        speciesLabel = addLabel("");
 
         Wind wind = forest.getWind();
 
@@ -68,10 +82,24 @@ public class ControlPanel extends JPanel {
         treeCountLabel.setText("Trees: " + trees);
         burningCountLabel.setText("Burning: " + burningTrees);
         windCountLabel.setText("Wind affected: " + windAffectedCells);
+        speciesLabel.setText(createSpeciesText());
+        stateLabel.setText(
+                "State: " + forest.getSimulationStateName()
+        );
         positionLabel.setText(
                 "Position: " + forest.getOriginX()
                         + ", " + forest.getOriginY()
         );
+    }
+
+    private String createSpeciesText() {
+        String species = forest.getTreePopulationByType()
+                .entrySet()
+                .stream()
+                .map(entry -> entry.getKey() + ": " + entry.getValue())
+                .collect(Collectors.joining("<br>"));
+
+        return "<html>Species:<br>" + species + "</html>";
     }
 
     private JLabel addLabel(String text) {
