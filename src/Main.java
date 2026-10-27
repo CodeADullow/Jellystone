@@ -52,6 +52,10 @@ public class Main {
                 controlPanel,
                 BorderLayout.EAST
         );
+        contentPanel.add(
+                controlPanel.getWindPanel(),
+                BorderLayout.SOUTH
+        );
 
         window.setContentPane(contentPanel);
 

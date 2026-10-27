@@ -1,3 +1,5 @@
+import java.util.Random;
+
 public class Wind {
 
     private static final double MAX_EXPOSURE = 100.0;
@@ -58,6 +60,29 @@ public class Wind {
 
     public int getRadius() {
         return radius;
+    }
+
+    public void pickRandomVisibleCell(
+            Forest forest,
+            Random random) {
+
+        if (forest == null || random == null) {
+            throw new WindArgumentException(
+                    "Forest and random generator must not be null"
+            );
+        }
+
+        Cell[][] grid = forest.getGrid();
+
+        if (grid.length == 0 || grid[0].length == 0) {
+            throw new WindArgumentException(
+                    "Wind cannot select a cell from an empty forest"
+            );
+        }
+
+        startX = random.nextInt(grid[0].length);
+        startY = random.nextInt(grid.length);
+        applyWind(forest);
     }
 
     public void applyWind(Forest forest) {

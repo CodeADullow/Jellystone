@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -17,6 +18,8 @@ public class ControlPanel extends JPanel {
     private JLabel positionLabel;
     private JLabel speciesLabel;
     private JLabel stateLabel;
+    private JPanel windPanel;
+    private JLabel windStartLabel;
 
     public ControlPanel(Forest forest) {
         this.forest = forest;
@@ -51,23 +54,18 @@ public class ControlPanel extends JPanel {
         windCountLabel = addLabel("");
         speciesLabel = addLabel("");
 
-        Wind wind = forest.getWind();
-
-        if (wind != null) {
-            add(Box.createVerticalStrut(15));
-            addLabel("Wind");
-            addLabel("Direction: " + wind.getDirection());
-            addLabel("Speed: " + wind.getSpeed());
-            addLabel("Radius: " + wind.getRadius());
-        }
-
         add(Box.createVerticalStrut(15));
         addLabel("Legend");
         addLabel("Tree: green image");
         addLabel("Fire: flame image");
         addLabel("Wind: blue border");
 
+        windPanel = createWindPanel();
         refresh();
+    }
+
+    public JPanel getWindPanel() {
+        return windPanel;
     }
 
     public void refresh() {
@@ -90,6 +88,14 @@ public class ControlPanel extends JPanel {
                 "Position: " + forest.getOriginX()
                         + ", " + forest.getOriginY()
         );
+
+        Wind wind = forest.getWind();
+        if (wind != null && windStartLabel != null) {
+            windStartLabel.setText(
+                    "Start cell: " + wind.getStartX()
+                            + ", " + wind.getStartY()
+            );
+        }
     }
 
     private String createSpeciesText() {
@@ -108,5 +114,27 @@ public class ControlPanel extends JPanel {
         add(label);
         add(Box.createVerticalStrut(5));
         return label;
+    }
+
+    private JPanel createWindPanel() {
+        JPanel panel = new JPanel(
+                new FlowLayout(FlowLayout.LEFT, 25, 8)
+        );
+        panel.setPreferredSize(new Dimension(0, 55));
+        panel.setBackground(new Color(220, 240, 255));
+        panel.setBorder(BorderFactory.createTitledBorder("Wind"));
+
+        Wind wind = forest.getWind();
+        if (wind == null) {
+            panel.add(new JLabel("No active wind"));
+        } else {
+            panel.add(new JLabel("Direction: " + wind.getDirection()));
+            panel.add(new JLabel("Speed: " + wind.getSpeed()));
+            panel.add(new JLabel("Radius: " + wind.getRadius()));
+            windStartLabel = new JLabel();
+            panel.add(windStartLabel);
+        }
+
+        return panel;
     }
 }

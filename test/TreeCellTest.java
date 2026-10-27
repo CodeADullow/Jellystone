@@ -5,6 +5,7 @@ public class TreeCellTest {
         testSubclassTreeTypes();
         testBurning();
         testWindIncreasesBurnRate();
+        testWindSelectsVisibleCellWhileRunning();
         testDamageAndDeath();
         testCellRemoval();
         testValidation();
@@ -134,6 +135,34 @@ public class TreeCellTest {
         check(
                 windyTree.getHealth() < calmTree.getHealth(),
                 "Wind-exposed trees should burn faster"
+        );
+    }
+
+    private static void testWindSelectsVisibleCellWhileRunning() {
+        Forest forest = new Forest(3, 4);
+        Wind wind = new Wind(50.0, "EAST", 0, 0, 2);
+        forest.setWind(wind);
+
+        for (int update = 0; update < 10; update++) {
+            forest.update();
+
+            check(
+                    wind.getStartX() >= 0 && wind.getStartX() < 4
+                            && wind.getStartY() >= 0
+                            && wind.getStartY() < 3,
+                    "Running wind should select a visible cell"
+            );
+        }
+
+        forest.toggleSimulationState();
+        int pausedX = wind.getStartX();
+        int pausedY = wind.getStartY();
+        forest.update();
+
+        check(
+                wind.getStartX() == pausedX
+                        && wind.getStartY() == pausedY,
+                "Paused wind should keep its current start cell"
         );
     }
 

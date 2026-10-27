@@ -206,6 +206,10 @@ public class Forest implements Iterable<Cell> {
 
     private void performUpdate() {
 
+        if (wind != null) {
+            wind.pickRandomVisibleCell(this, random);
+        }
+
         spreadFire();
         advanceBurningTrees();
     }
