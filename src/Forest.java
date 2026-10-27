@@ -133,6 +133,7 @@ public class Forest implements Iterable<Cell> {
         return cells;
     }
 
+    // MEMORY RED FLAG
     private Cell getOrCreateCell(int worldX, int worldY) {
         for (int index = 0; index < worldCellCount; index++) {
             Cell storedCell = worldCells[index];
