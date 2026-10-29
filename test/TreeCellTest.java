@@ -5,7 +5,8 @@ public class TreeCellTest {
         testSubclassTreeTypes();
         testBurning();
         testWindIncreasesBurnRate();
-        testWindSelectsVisibleCellWhileRunning();
+        testWindStaysAtWorldPosition();
+        testWindChangesAfterTenUpdates();
         testDamageAndDeath();
         testCellRemoval();
         testValidation();
@@ -138,32 +139,56 @@ public class TreeCellTest {
         );
     }
 
-    private static void testWindSelectsVisibleCellWhileRunning() {
+    private static void testWindStaysAtWorldPosition() {
         Forest forest = new Forest(3, 4);
-        Wind wind = new Wind(50.0, "EAST", 0, 0, 2);
+        Wind wind = new Wind(50.0, "EAST", 1, 1, 2);
         forest.setWind(wind);
 
-        for (int update = 0; update < 10; update++) {
-            forest.update();
+        forest.toggleSimulationState();
+        forest.moveView(2, 0);
 
-            check(
-                    wind.getStartX() >= 0 && wind.getStartX() < 4
-                            && wind.getStartY() >= 0
-                            && wind.getStartY() < 3,
-                    "Running wind should select a visible cell"
-            );
+        check(
+                wind.getStartX() == 1 && wind.getStartY() == 1,
+                "Moving a paused view should not move the wind source"
+        );
+        check(
+                forest.getGrid()[1][0].getWindExposure() > 0.0,
+                "Exposure should use the cell's world coordinates"
+        );
+    }
+
+    private static void testWindChangesAfterTenUpdates() {
+        Forest forest = new Forest(2, 2);
+        Wind wind = new Wind(50.0, "EAST", 0, 0, 0);
+        forest.setWind(wind);
+
+        for (int update = 0; update < 9; update++) {
+            forest.update();
         }
 
-        forest.toggleSimulationState();
-        int pausedX = wind.getStartX();
-        int pausedY = wind.getStartY();
+        check(
+                wind.getStartX() == 0 && wind.getStartY() == 0,
+                "Wind should stay still before ten updates"
+        );
+        check(wind.getDirection().equals("EAST"),
+                "Direction should stay still before ten updates");
+        check(wind.getSpeed() == 50.0,
+                "Speed should stay still before ten updates");
+        check(wind.getRadius() == 0,
+                "Radius should stay still before ten updates");
+
         forest.update();
 
         check(
-                wind.getStartX() == pausedX
-                        && wind.getStartY() == pausedY,
-                "Paused wind should keep its current start cell"
+                wind.getStartX() != 0 || wind.getStartY() != 0,
+                "Wind should choose another cell after ten updates"
         );
+        check(!wind.getDirection().equals("EAST"),
+                "Wind should change direction after ten updates");
+        check(wind.getSpeed() != 50.0,
+                "Wind should change speed after ten updates");
+        check(wind.getRadius() != 0,
+                "Wind should change radius after ten updates");
     }
 
     private static void testCellRemoval() {

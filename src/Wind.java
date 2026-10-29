@@ -3,6 +3,11 @@ import java.util.Random;
 public class Wind {
 
     private static final double MAX_EXPOSURE = 100.0;
+    private static final int MIN_RANDOM_SPEED = 20;
+    private static final int MAX_RANDOM_SPEED = 100;
+    private static final String[] DIRECTIONS = {
+            "NORTH", "SOUTH", "EAST", "WEST"
+    };
     private static double DOWN = 0.4;
     private static double SIDE = 0.1;
     private static double UP = -0.2;
@@ -62,6 +67,41 @@ public class Wind {
         return radius;
     }
 
+    public void randomize(Forest forest, Random random) {
+        if (forest == null || random == null) {
+            throw new WindArgumentException(
+                    "Forest and random generator must not be null"
+            );
+        }
+
+        int directionIndex = random.nextInt(DIRECTIONS.length);
+        if (DIRECTIONS[directionIndex].equals(direction)) {
+            directionIndex = (directionIndex + 1) % DIRECTIONS.length;
+        }
+
+        int speedRange = MAX_RANDOM_SPEED - MIN_RANDOM_SPEED + 1;
+        int newSpeed = MIN_RANDOM_SPEED + random.nextInt(speedRange);
+        if (newSpeed == speed) {
+            newSpeed = MIN_RANDOM_SPEED
+                    + (newSpeed - MIN_RANDOM_SPEED + 1) % speedRange;
+        }
+
+        Cell[][] grid = forest.getGrid();
+        int maximumRadius = Math.max(
+                1,
+                Math.max(grid.length, grid[0].length) / 2
+        );
+        int newRadius = 1 + random.nextInt(maximumRadius);
+        if (maximumRadius > 1 && newRadius == radius) {
+            newRadius = newRadius % maximumRadius + 1;
+        }
+
+        direction = DIRECTIONS[directionIndex];
+        speed = newSpeed;
+        radius = newRadius;
+        pickRandomVisibleCell(forest, random);
+    }
+
     public void pickRandomVisibleCell(
             Forest forest,
             Random random) {
@@ -80,8 +120,24 @@ public class Wind {
             );
         }
 
-        startX = random.nextInt(grid[0].length);
-        startY = random.nextInt(grid.length);
+        int columnCount = grid[0].length;
+        int cellCount = grid.length * columnCount;
+        int selectedIndex = random.nextInt(cellCount);
+        int row = selectedIndex / columnCount;
+        int col = selectedIndex % columnCount;
+        Cell selectedCell = grid[row][col];
+
+        if (cellCount > 1
+                && selectedCell.getX() == startX
+                && selectedCell.getY() == startY) {
+            selectedIndex = (selectedIndex + 1) % cellCount;
+            row = selectedIndex / columnCount;
+            col = selectedIndex % columnCount;
+            selectedCell = grid[row][col];
+        }
+
+        startX = selectedCell.getX();
+        startY = selectedCell.getY();
         applyWind(forest);
     }
 
@@ -98,20 +154,15 @@ public class Wind {
             );
         }
 
-        if (startY >= grid.length ||
-            startX >= grid[startY].length) {
-
-            throw new WindArgumentException(
-                    "Starting cell must be inside the forest"
-            );
-        }
-
         for (int row = 0; row < grid.length; row++) {
 
             for (int col = 0; col < grid[row].length; col++) {
 
                 Cell cell = grid[row][col];
-                double exposure = calculateExposure(col, row);
+                double exposure = calculateExposure(
+                        cell.getX(),
+                        cell.getY()
+                );
 
                 cell.setWindExposure(exposure);
             }
@@ -138,10 +189,6 @@ public class Wind {
 
 
     public double calculateExposure(int x, int y) {
-        if (x < 0 || y < 0) {
-            return 0.0;
-        }
-
         int relativeX = x - startX;
         int relativeY = y - startY;
         int directionX = getDirectionX();

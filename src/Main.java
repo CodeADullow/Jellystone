@@ -7,12 +7,12 @@ public class Main {
     public static void main(String[] args) {
 
         Forest forest = new Forest(40, 60);
-
-        Wind wind = new Wind(30, "EAST", 30, 20, 15);
-        forest.setWind(wind);
-
-
         Random random = new Random();
+
+        Wind wind = new Wind(30, "EAST", 0, 0, 15);
+        forest.setWind(wind);
+        wind.randomize(forest, random);
+
 
         IgnitionSource source;
         Lightning lightning = null;

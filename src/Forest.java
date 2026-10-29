@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 public class Forest implements Iterable<Cell> {
 
+    private static final int WIND_MOVE_INTERVAL = 10;
+
     private Cell[][] grid;
 
     private double temperature;
@@ -22,6 +24,7 @@ public class Forest implements Iterable<Cell> {
     private int worldCellCount;
     private int originX;
     private int originY;
+    private int updatesSinceWindMove;
     private SimulationState simulationState = new RunningState();
 
     public Forest(int rows, int columns) {
@@ -80,6 +83,7 @@ public class Forest implements Iterable<Cell> {
 
     public void setWind(Wind wind) {
         this.wind = wind;
+        updatesSinceWindMove = 0;
         wind.applyWind(this);
     }
 
@@ -205,13 +209,17 @@ public class Forest implements Iterable<Cell> {
     }
 
     private void performUpdate() {
-
-        if (wind != null) {
-            wind.pickRandomVisibleCell(this, random);
-        }
-
         spreadFire();
         advanceBurningTrees();
+
+        if (wind != null) {
+            updatesSinceWindMove++;
+
+            if (updatesSinceWindMove >= WIND_MOVE_INTERVAL) {
+                wind.randomize(this, random);
+                updatesSinceWindMove = 0;
+            }
+        }
     }
 
     private interface SimulationState {
@@ -337,14 +345,15 @@ public class Forest implements Iterable<Cell> {
                 target.getTree().getSpreadability();
 
         if (wind != null) {
+            Cell source = grid[sourceRow][sourceCol];
 
             chance += wind.getSpreadModifier(
-                    sourceCol,
-                    sourceRow,
-                    col,
-                    row
+                    source.getX(),
+                    source.getY(),
+                    target.getX(),
+                    target.getY()
             );
-}
+        }
 
         chance += aridity * 0.2;
 

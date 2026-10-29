@@ -20,6 +20,9 @@ public class ControlPanel extends JPanel {
     private JLabel stateLabel;
     private JPanel windPanel;
     private JLabel windStartLabel;
+    private JLabel windDirectionLabel;
+    private JLabel windSpeedLabel;
+    private JLabel windRadiusLabel;
 
     public ControlPanel(Forest forest) {
         this.forest = forest;
@@ -91,6 +94,11 @@ public class ControlPanel extends JPanel {
 
         Wind wind = forest.getWind();
         if (wind != null && windStartLabel != null) {
+            windDirectionLabel.setText(
+                    "Direction: " + wind.getDirection()
+            );
+            windSpeedLabel.setText("Speed: " + wind.getSpeed());
+            windRadiusLabel.setText("Radius: " + wind.getRadius());
             windStartLabel.setText(
                     "Start cell: " + wind.getStartX()
                             + ", " + wind.getStartY()
@@ -128,10 +136,14 @@ public class ControlPanel extends JPanel {
         if (wind == null) {
             panel.add(new JLabel("No active wind"));
         } else {
-            panel.add(new JLabel("Direction: " + wind.getDirection()));
-            panel.add(new JLabel("Speed: " + wind.getSpeed()));
-            panel.add(new JLabel("Radius: " + wind.getRadius()));
+            windDirectionLabel = new JLabel();
+            windSpeedLabel = new JLabel();
+            windRadiusLabel = new JLabel();
             windStartLabel = new JLabel();
+
+            panel.add(windDirectionLabel);
+            panel.add(windSpeedLabel);
+            panel.add(windRadiusLabel);
             panel.add(windStartLabel);
         }
 
