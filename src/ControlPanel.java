@@ -8,6 +8,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 public class ControlPanel extends JPanel {
 
@@ -23,6 +24,8 @@ public class ControlPanel extends JPanel {
     private JLabel windDirectionLabel;
     private JLabel windSpeedLabel;
     private JLabel windRadiusLabel;
+    private JTextField extraWindCellsInput;
+    private JLabel extraWindCellsMessage;
 
     public ControlPanel(Forest forest) {
         this.forest = forest;
@@ -100,7 +103,8 @@ public class ControlPanel extends JPanel {
             windSpeedLabel.setText("Speed: " + wind.getSpeed());
             windRadiusLabel.setText("Radius: " + wind.getRadius());
             windStartLabel.setText(
-                    "Start cell: " + wind.getStartX()
+                    "Wind cells: " + wind.getWindCellCount()
+                            + " | First: " + wind.getStartX()
                             + ", " + wind.getStartY()
             );
         }
@@ -128,7 +132,7 @@ public class ControlPanel extends JPanel {
         JPanel panel = new JPanel(
                 new FlowLayout(FlowLayout.LEFT, 25, 8)
         );
-        panel.setPreferredSize(new Dimension(0, 55));
+        panel.setPreferredSize(new Dimension(0, 90));
         panel.setBackground(new Color(220, 240, 255));
         panel.setBorder(BorderFactory.createTitledBorder("Wind"));
 
@@ -145,8 +149,32 @@ public class ControlPanel extends JPanel {
             panel.add(windSpeedLabel);
             panel.add(windRadiusLabel);
             panel.add(windStartLabel);
+
+            panel.add(new JLabel("Extra wind cells:"));
+            extraWindCellsInput = new JTextField("0", 4);
+            panel.add(extraWindCellsInput);
+
+            JButton setBonusButton = new JButton("Set");
+            setBonusButton.addActionListener(event -> setExtraWindCells());
+            panel.add(setBonusButton);
+
+            extraWindCellsMessage = new JLabel();
+            panel.add(extraWindCellsMessage);
         }
 
         return panel;
+    }
+
+    private void setExtraWindCells() {
+        try {
+            int additionalCells = Integer.parseInt(
+                    extraWindCellsInput.getText().trim()
+            );
+            forest.getWind().setAdditionalWindCells(additionalCells);
+            extraWindCellsMessage.setText("Applied next randomisation");
+            refresh();
+        } catch (IllegalArgumentException exception) {
+            extraWindCellsMessage.setText("Enter 0 or more");
+        }
     }
 }

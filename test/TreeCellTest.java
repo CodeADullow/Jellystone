@@ -5,6 +5,7 @@ public class TreeCellTest {
         testSubclassTreeTypes();
         testBurning();
         testWindIncreasesBurnRate();
+        testDirectionChangesBurnRate();
         testWindStaysAtWorldPosition();
         testWindChangesAfterTenUpdates();
         testDamageAndDeath();
@@ -139,6 +140,25 @@ public class TreeCellTest {
         );
     }
 
+    private static void testDirectionChangesBurnRate() {
+        Forest forest = new Forest(3, 3);
+        Tree downwindTree = new Tree(0.5);
+        Tree diagonalTree = new Tree(0.5);
+
+        forest.getGrid()[1][1].plantTree(downwindTree);
+        forest.getGrid()[0][1].plantTree(diagonalTree);
+        downwindTree.ignite();
+        diagonalTree.ignite();
+
+        forest.setWind(new Wind(100.0, "EAST", 0, 1, 3));
+        forest.update();
+
+        check(
+                downwindTree.getHealth() < diagonalTree.getHealth(),
+                "A tree directly downwind should burn faster"
+        );
+    }
+
     private static void testWindStaysAtWorldPosition() {
         Forest forest = new Forest(3, 4);
         Wind wind = new Wind(50.0, "EAST", 1, 1, 2);
@@ -161,6 +181,7 @@ public class TreeCellTest {
         Forest forest = new Forest(2, 2);
         Wind wind = new Wind(50.0, "EAST", 0, 0, 0);
         forest.setWind(wind);
+        wind.setAdditionalWindCells(3);
 
         for (int update = 0; update < 9; update++) {
             forest.update();
@@ -189,6 +210,15 @@ public class TreeCellTest {
                 "Wind should change speed after ten updates");
         check(wind.getRadius() != 0,
                 "Wind should change radius after ten updates");
+        check(wind.getWindCellCount() == 4,
+                "Wind should add three extra source cells");
+
+        for (Cell[] row : forest.getGrid()) {
+            for (Cell cell : row) {
+                check(cell.getWindExposure() > 0.0,
+                        "Each selected wind cell should have exposure");
+            }
+        }
     }
 
     private static void testCellRemoval() {

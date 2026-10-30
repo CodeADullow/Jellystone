@@ -17,6 +17,10 @@ public class Wind {
     private int startX;
     private int startY;
     private int radius;
+    private int[] sourceXs;
+    private int[] sourceYs;
+    private int sourceCount = 1;
+    private int additionalWindCells;
 
     public Wind(double speed, String direction, int startX, int startY, int radius) {
         if (!Double.isFinite(speed) || speed < 0.0) {
@@ -45,6 +49,8 @@ public class Wind {
         this.startX = startX;
         this.startY = startY;
         this.radius = radius;
+        this.sourceXs = new int[] {startX};
+        this.sourceYs = new int[] {startY};
     }
 
     public double getSpeed() {
@@ -65,6 +71,24 @@ public class Wind {
 
     public int getRadius() {
         return radius;
+    }
+
+    public int getWindCellCount() {
+        return sourceCount;
+    }
+
+    public int getAdditionalWindCells() {
+        return additionalWindCells;
+    }
+
+    public void setAdditionalWindCells(int additionalWindCells) {
+        if (additionalWindCells < 0) {
+            throw new WindArgumentException(
+                    "Additional wind cells must be non-negative"
+            );
+        }
+
+        this.additionalWindCells = additionalWindCells;
     }
 
     public void randomize(Forest forest, Random random) {
@@ -99,10 +123,10 @@ public class Wind {
         direction = DIRECTIONS[directionIndex];
         speed = newSpeed;
         radius = newRadius;
-        pickRandomVisibleCell(forest, random);
+        pickRandomVisibleCells(forest, random);
     }
 
-    public void pickRandomVisibleCell(
+    private void pickRandomVisibleCells(
             Forest forest,
             Random random) {
 
@@ -122,23 +146,59 @@ public class Wind {
 
         int columnCount = grid[0].length;
         int cellCount = grid.length * columnCount;
-        int selectedIndex = random.nextInt(cellCount);
-        int row = selectedIndex / columnCount;
-        int col = selectedIndex % columnCount;
-        Cell selectedCell = grid[row][col];
+        sourceCount = 1 + Math.min(
+                additionalWindCells,
+                cellCount - 1
+        );
 
-        if (cellCount > 1
-                && selectedCell.getX() == startX
-                && selectedCell.getY() == startY) {
-            selectedIndex = (selectedIndex + 1) % cellCount;
-            row = selectedIndex / columnCount;
-            col = selectedIndex % columnCount;
-            selectedCell = grid[row][col];
+        int[] indexes = new int[cellCount];
+        for (int index = 0; index < cellCount; index++) {
+            indexes[index] = index;
         }
 
-        startX = selectedCell.getX();
-        startY = selectedCell.getY();
+        for (int index = 0; index < sourceCount; index++) {
+            int randomIndex = index
+                    + random.nextInt(cellCount - index);
+            int temporary = indexes[index];
+            indexes[index] = indexes[randomIndex];
+            indexes[randomIndex] = temporary;
+        }
+
+        int previousIndex = findVisibleIndex(grid, startX, startY);
+        if (cellCount > 1 && indexes[0] == previousIndex) {
+            int swapIndex = sourceCount < cellCount ? sourceCount : 1;
+            int temporary = indexes[0];
+            indexes[0] = indexes[swapIndex];
+            indexes[swapIndex] = temporary;
+        }
+
+        sourceXs = new int[sourceCount];
+        sourceYs = new int[sourceCount];
+
+        for (int index = 0; index < sourceCount; index++) {
+            int row = indexes[index] / columnCount;
+            int col = indexes[index] % columnCount;
+            Cell selectedCell = grid[row][col];
+            sourceXs[index] = selectedCell.getX();
+            sourceYs[index] = selectedCell.getY();
+        }
+
+        startX = sourceXs[0];
+        startY = sourceYs[0];
         applyWind(forest);
+    }
+
+    private int findVisibleIndex(Cell[][] grid, int x, int y) {
+        for (int row = 0; row < grid.length; row++) {
+            for (int col = 0; col < grid[row].length; col++) {
+                Cell cell = grid[row][col];
+                if (cell.getX() == x && cell.getY() == y) {
+                    return row * grid[row].length + col;
+                }
+            }
+        }
+
+        return -1;
     }
 
     public void applyWind(Forest forest) {
@@ -189,8 +249,21 @@ public class Wind {
 
 
     public double calculateExposure(int x, int y) {
-        int relativeX = x - startX;
-        int relativeY = y - startY;
+        double strongestExposure = 0.0;
+
+        for (int index = 0; index < sourceCount; index++) {
+            strongestExposure = Math.max(
+                    strongestExposure,
+                    calculateExposureFromSource(x, y, sourceXs[index], sourceYs[index])
+            );
+        }
+
+        return strongestExposure;
+    }
+
+    private double calculateExposureFromSource(int x, int y, int sourceX, int sourceY) {
+        int relativeX = x - sourceX;
+        int relativeY = y - sourceY;
         int directionX = getDirectionX();
         int directionY = getDirectionY();
 
@@ -215,6 +288,39 @@ public class Wind {
         double distanceFactor = 1.0 - distance / (radius + 1.0);
 
         return maximumExposure * distanceFactor;
+    }
+
+    public double getBurnRateMultiplier(int x, int y) {
+        double strongestMultiplier = 1.0;
+
+        for (int index = 0; index < sourceCount; index++) {
+            double exposure = calculateExposureFromSource(
+                    x, y, sourceXs[index], sourceYs[index]
+            );
+
+            int relativeX = x - sourceXs[index];
+            int relativeY = y - sourceYs[index];
+            int forwardDistance =
+                    relativeX * getDirectionX()
+                    + relativeY * getDirectionY();
+            int sidewaysDistance = Math.abs(
+                    relativeX * getDirectionY()
+                    - relativeY * getDirectionX()
+            );
+
+            double directionStrength = 1.0;
+            if (forwardDistance > 0) {
+                directionStrength -= 0.5
+                        * sidewaysDistance / forwardDistance;
+            }
+
+            strongestMultiplier = Math.max(
+                    strongestMultiplier,
+                    1.0 + exposure * directionStrength
+            );
+        }
+
+        return strongestMultiplier;
     }
 
     public double getSpreadModifier(int sourceX, int sourceY, int targetX, int targetY) {

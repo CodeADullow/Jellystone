@@ -263,12 +263,16 @@ public class Forest implements Iterable<Cell> {
             Tree tree = cell.getTree();
 
             if (tree.isBurning()) {
-                double windExposure = Math.max(
-                        0.0,
-                        Math.min(1.0, cell.getWindExposure())
-                );
+                double burnRateMultiplier = 1.0;
 
-                tree.advanceBurning(1.0 + windExposure);
+                if (wind != null) {
+                    burnRateMultiplier = wind.getBurnRateMultiplier(
+                            cell.getX(),
+                            cell.getY()
+                    );
+                }
+
+                tree.advanceBurning(burnRateMultiplier);
             }
 
             if (!tree.isAlive()) {
