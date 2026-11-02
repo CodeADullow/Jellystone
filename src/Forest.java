@@ -1,4 +1,5 @@
 import java.util.Arrays;
+import java.util.DoubleSummaryStatistics;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -203,6 +204,49 @@ public class Forest implements Iterable<Cell> {
                         Collectors.counting()
                 ));
     }
+
+    // Stream filter
+    public double getTotalFireIntensity() {
+        return Arrays.stream(grid)
+                .flatMap(Arrays::stream)
+                .filter(Cell::hasTree)
+                .map(Cell::getTree)
+                .filter(Tree::isBurning)
+                .mapToDouble(Tree::getBurnIntensity)
+                .reduce(0.0, Double::sum);
+    }
+
+    // Partition trees into burning / non-burning groups.
+    public Map<Boolean, Long> getTreeStateCounts() {
+        return Arrays.stream(grid)
+                .flatMap(Arrays::stream)
+                .filter(Cell::hasTree)
+                .map(Cell::getTree)
+                .collect(Collectors.partitioningBy(
+                        Tree::isBurning,
+                        Collectors.counting()
+                ));
+    }
+
+    public Map<String, DoubleSummaryStatistics> getTreeHealthByType() {
+        return Arrays.stream(grid)
+                .parallel()
+                .flatMap(Arrays::stream)
+                .filter(Cell::hasTree)
+                .map(Cell::getTree)
+                .collect(Collectors.groupingBy(
+                        Tree::getTreeType,
+                        TreeMap::new,
+                        Collectors.summarizingDouble(
+                                tree -> 100.0
+                                        * tree.getHealth()
+                                        / tree.getMaxHealth()
+                        )
+                ));
+    }
+
+
+
 
     public void update() {
         simulationState.update();

@@ -1,6 +1,7 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -15,9 +16,12 @@ public class ControlPanel extends JPanel {
     private Forest forest;
     private JLabel treeCountLabel;
     private JLabel burningCountLabel;
+    private JLabel safeCountLabel;
+    private JLabel fireIntensityLabel;
     private JLabel windCountLabel;
     private JLabel positionLabel;
     private JLabel speciesLabel;
+    private JLabel healthLabel;
     private JLabel stateLabel;
     private JPanel windPanel;
     private JLabel windStartLabel;
@@ -57,8 +61,11 @@ public class ControlPanel extends JPanel {
         addLabel("Live statistics");
         treeCountLabel = addLabel("");
         burningCountLabel = addLabel("");
+        safeCountLabel = addLabel("");
+        fireIntensityLabel = addLabel("");
         windCountLabel = addLabel("");
         speciesLabel = addLabel("");
+        healthLabel = addLabel("");
 
         add(Box.createVerticalStrut(15));
         addLabel("Legend");
@@ -76,17 +83,26 @@ public class ControlPanel extends JPanel {
 
     public void refresh() {
         long trees = forest.countCells(Cell::hasTree);
-        long burningTrees = forest.countCells(
-                cell -> cell.hasTree() && cell.getTree().isBurning()
-        );
         long windAffectedCells = forest.countCells(
                 cell -> cell.getWindExposure() > 0.0
         );
+        Map<Boolean, Long> treeStates =
+                forest.getTreeStateCounts();
 
         treeCountLabel.setText("Trees: " + trees);
-        burningCountLabel.setText("Burning: " + burningTrees);
+        burningCountLabel.setText(
+                "Burning: " + treeStates.get(true)
+        );
+        safeCountLabel.setText(
+                "Not burning: " + treeStates.get(false)
+        );
+        fireIntensityLabel.setText(String.format(
+                "Fire intensity: %.2f",
+                forest.getTotalFireIntensity()
+        ));
         windCountLabel.setText("Wind affected: " + windAffectedCells);
         speciesLabel.setText(createSpeciesText());
+        healthLabel.setText(createHealthText());
         stateLabel.setText(
                 "State: " + forest.getSimulationStateName()
         );
@@ -118,6 +134,20 @@ public class ControlPanel extends JPanel {
                 .collect(Collectors.joining("<br>"));
 
         return "<html>Species:<br>" + species + "</html>";
+    }
+
+    private String createHealthText() {
+        String health = forest.getTreeHealthByType()
+                .entrySet()
+                .stream()
+                .map(entry -> String.format(
+                        "%s: %.1f%%",
+                        entry.getKey(),
+                        entry.getValue().getAverage()
+                ))
+                .collect(Collectors.joining("<br>"));
+
+        return "<html>Average health:<br>" + health + "</html>";
     }
 
     private JLabel addLabel(String text) {
