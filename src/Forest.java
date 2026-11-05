@@ -112,6 +112,32 @@ public class Forest implements Iterable<Cell> {
         return simulationState.getName();
     }
 
+    public void reset() {
+        int rows = grid.length;
+        int columns = grid[0].length;
+
+        temperature = 25.0;
+        rainfall = 0.2;
+        aridity = 0.5;
+        originX = 0;
+        originY = 0;
+        updatesSinceWindMove = 0;
+        worldCells = new Cell[Math.max(100, rows * columns)];
+        worldCellCount = 0;
+
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < columns; col++) {
+                grid[row][col] = getOrCreateCell(col, row);
+            }
+        }
+
+        if (wind != null) {
+            wind.randomize(this, random);
+        }
+
+        simulationState = new ResetState();
+    }
+
     public void moveView(int changeX, int changeY) {
         originX += changeX;
         originY += changeY;
@@ -293,6 +319,17 @@ public class Forest implements Iterable<Cell> {
         @Override
         public String getName() {
             return "PAUSED";
+        }
+    }
+
+    private class ResetState implements SimulationState {
+        @Override
+        public void update() {
+        }
+
+        @Override
+        public String getName() {
+            return "RESET";
         }
     }
 

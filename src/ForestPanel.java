@@ -58,9 +58,8 @@ public class ForestPanel extends JPanel {
         super.paintComponent(g);
 
         Cell[][] grid = forest.getGrid();
-
-        int cellWidth = getWidth() / grid[0].length;
-        int cellHeight = getHeight() / grid.length;
+        int rowCount = grid.length;
+        int columnCount = grid[0].length;
 
         Cell currentLightningCell = null;
 
@@ -78,12 +77,22 @@ public class ForestPanel extends JPanel {
             for (int col = 0; col < grid[row].length; col++) {
 
                 Cell cell = grid[row][col];
+                int x = col * getWidth() / columnCount;
+                int nextX = (col + 1) * getWidth() / columnCount;
+                int y = row * getHeight() / rowCount;
+                int nextY = (row + 1) * getHeight() / rowCount;
+                int cellWidth = nextX - x;
+                int cellHeight = nextY - y;
+
+                if (cellWidth <= 0 || cellHeight <= 0) {
+                    continue;
+                }
 
                 g.setColor(Color.BLACK);
 
                 g.fillRect(
-                    col * cellWidth,
-                    row * cellHeight,
+                    x,
+                    y,
                     cellWidth,
                     cellHeight
                 );
@@ -92,13 +101,9 @@ public class ForestPanel extends JPanel {
                     cell == currentLightningCell &&
                     System.currentTimeMillis() - lightningStartTime < 3000) {
 
-                    g.drawImage(
-                        lightningImage,
-                        col * cellWidth + 2,
-                        row * cellHeight + 2,
-                        cellWidth - 4,
-                        cellHeight - 4,
-                        this
+                    drawCellImage(
+                            g, lightningImage,
+                            x, y, cellWidth, cellHeight
                     );
                 }
                 else {
@@ -109,24 +114,16 @@ public class ForestPanel extends JPanel {
                     }
                     else if (cell.getTree().isBurning()) {
 
-                        g.drawImage(
-                            fireImage,
-                            col * cellWidth + 2,
-                            row * cellHeight + 2,
-                            cellWidth - 4,
-                            cellHeight - 4,
-                            this
+                        drawCellImage(
+                                g, fireImage,
+                                x, y, cellWidth, cellHeight
                         );
                     }
                     else {
 
-                        g.drawImage(
-                            treeImage,
-                            col * cellWidth + 2,
-                            row * cellHeight + 2,
-                            cellWidth - 4,
-                            cellHeight - 4,
-                            this
+                        drawCellImage(
+                                g, treeImage,
+                                x, y, cellWidth, cellHeight
                         );
                     }
                 }
@@ -137,6 +134,26 @@ public class ForestPanel extends JPanel {
                 g,
                 getWidth(),
                 getHeight()
+        );
+    }
+
+    private void drawCellImage(
+            Graphics graphics,
+            Image image,
+            int x,
+            int y,
+            int width,
+            int height) {
+
+        int inset = Math.min(2, Math.min(width, height) / 4);
+
+        graphics.drawImage(
+                image,
+                x + inset,
+                y + inset,
+                Math.max(1, width - inset * 2),
+                Math.max(1, height - inset * 2),
+                this
         );
     }
 }

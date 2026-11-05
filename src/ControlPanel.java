@@ -30,9 +30,15 @@ public class ControlPanel extends JPanel {
     private JLabel windRadiusLabel;
     private JTextField extraWindCellsInput;
     private JLabel extraWindCellsMessage;
+    private Runnable resetAction;
 
     public ControlPanel(Forest forest) {
+        this(forest, forest::reset);
+    }
+
+    public ControlPanel(Forest forest, Runnable resetAction) {
         this.forest = forest;
+        this.resetAction = resetAction;
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setPreferredSize(new Dimension(180, 0));
@@ -56,6 +62,14 @@ public class ControlPanel extends JPanel {
             refresh();
         });
         add(stateButton);
+
+        JButton resetButton = new JButton("Reset");
+        resetButton.setAlignmentX(LEFT_ALIGNMENT);
+        resetButton.addActionListener(event -> {
+            resetAction.run();
+            refresh();
+        });
+        add(resetButton);
 
         add(Box.createVerticalStrut(15));
         addLabel("Live statistics");

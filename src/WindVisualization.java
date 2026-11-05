@@ -36,8 +36,8 @@ public class WindVisualization extends JPanel {
         borderGraphics.setColor(new Color(0, 160, 255));
         borderGraphics.setStroke(new BasicStroke(2.0f));
 
-        int cellWidth = width / grid[0].length;
-        int cellHeight = height / grid.length;
+        int rowCount = grid.length;
+        int columnCount = grid[0].length;
 
         for (int row = 0; row < grid.length; row++) {
 
@@ -47,10 +47,21 @@ public class WindVisualization extends JPanel {
                     continue;
                 }
 
-                int x = col * cellWidth;
-                int y = row * cellHeight;
+                int x = col * width / columnCount;
+                int nextX = (col + 1) * width / columnCount;
+                int y = row * height / rowCount;
+                int nextY = (row + 1) * height / rowCount;
+                int cellWidth = nextX - x;
+                int cellHeight = nextY - y;
 
-                borderGraphics.drawRect(x, y, cellWidth - 1, cellHeight - 1);
+                if (cellWidth > 0 && cellHeight > 0) {
+                    borderGraphics.drawRect(
+                            x,
+                            y,
+                            cellWidth - 1,
+                            cellHeight - 1
+                    );
+                }
             }
         }
 

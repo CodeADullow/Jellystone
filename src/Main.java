@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.util.Random;
 
 public class Main {
@@ -33,23 +34,30 @@ public class Main {
             System.out.println("Ignition source: Backburning");
         }
 
-        try {
-            source.ignite(forest);
-        }
-        catch (IllegalStateException | IllegalArgumentException e) {
-            System.out.println("Ignition failed: " + e.getMessage());
-        }
+        igniteForest(source, forest);
 
 
         JFrame window = new JFrame("Forest Fire Simulation");
 
         ForestPanel panel = new ForestPanel(forest, lightning);
-        ControlPanel controlPanel = new ControlPanel(forest);
+        ControlPanel controlPanel = new ControlPanel(forest, () -> {
+            forest.reset();
+            igniteForest(source, forest);
+            panel.repaint();
+        });
 
         JPanel contentPanel = new JPanel(new BorderLayout());
         contentPanel.add(panel, BorderLayout.CENTER);
-        contentPanel.add(
+
+        JScrollPane controlScroll = new JScrollPane(
                 controlPanel,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+        );
+        controlScroll.setBorder(null);
+        controlScroll.setPreferredSize(new Dimension(200, 0));
+        contentPanel.add(
+                controlScroll,
                 BorderLayout.EAST
         );
         contentPanel.add(
@@ -60,6 +68,8 @@ public class Main {
         window.setContentPane(contentPanel);
 
         window.setSize(900, 600);
+        window.setMinimumSize(new Dimension(650, 450));
+        window.setResizable(true);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.setLocationRelativeTo(null);
         window.setVisible(true);
@@ -74,6 +84,19 @@ public class Main {
         });
 
         timer.start();
+    }
+
+    private static void igniteForest(
+            IgnitionSource source,
+            Forest forest) {
+
+        try {
+            source.ignite(forest);
+        } catch (IllegalStateException | IllegalArgumentException exception) {
+            System.out.println(
+                    "Ignition failed: " + exception.getMessage()
+            );
+        }
     }
 }
 
