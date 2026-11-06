@@ -82,10 +82,12 @@ public class ControlPanel extends JPanel {
         healthLabel = addLabel("");
 
         add(Box.createVerticalStrut(15));
-        addLabel("Legend");
-        addLabel("Tree: green image");
-        addLabel("Fire: flame image");
-        addLabel("Wind: blue border");
+        addLabel("Colour map");
+        addLegendItem("Empty cell", ForestPanel.EMPTY_COLOR);
+        addLegendItem("Tree", ForestPanel.TREE_COLOR);
+        addLegendItem("Burning tree", ForestPanel.FIRE_COLOR);
+        addLegendItem("Lightning", ForestPanel.LIGHTNING_COLOR);
+        addLegendItem("Wind border", ForestPanel.WIND_COLOR);
 
         windPanel = createWindPanel();
         refresh();
@@ -170,6 +172,23 @@ public class ControlPanel extends JPanel {
         add(label);
         add(Box.createVerticalStrut(5));
         return label;
+    }
+
+    private void addLegendItem(String text, Color color) {
+        JPanel item = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        item.setOpaque(false);
+        item.setAlignmentX(LEFT_ALIGNMENT);
+
+        JLabel colourSquare = new JLabel("   ");
+        colourSquare.setOpaque(true);
+        colourSquare.setBackground(color);
+        colourSquare.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+
+        item.add(colourSquare);
+        item.add(Box.createHorizontalStrut(6));
+        item.add(new JLabel(text));
+        add(item);
+        add(Box.createVerticalStrut(4));
     }
 
     private JPanel createWindPanel() {

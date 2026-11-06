@@ -33,7 +33,7 @@ public class WindVisualization extends JPanel {
         }
 
         Graphics2D borderGraphics = (Graphics2D) graphics.create();
-        borderGraphics.setColor(new Color(0, 160, 255));
+        borderGraphics.setColor(ForestPanel.WIND_COLOR);
         borderGraphics.setStroke(new BasicStroke(2.0f));
 
         int rowCount = grid.length;

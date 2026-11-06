@@ -4,6 +4,12 @@ import javax.swing.*;
 
 public class ForestPanel extends JPanel {
 
+    static final Color EMPTY_COLOR = new Color(65, 50, 35);
+    static final Color TREE_COLOR = new Color(45, 120, 55);
+    static final Color FIRE_COLOR = new Color(210, 75, 25);
+    static final Color LIGHTNING_COLOR = new Color(235, 210, 60);
+    static final Color WIND_COLOR = new Color(0, 160, 255);
+
     private Forest forest;
 
     private Image treeImage;
@@ -88,18 +94,19 @@ public class ForestPanel extends JPanel {
                     continue;
                 }
 
-                g.setColor(Color.BLACK);
+                boolean lightningActive = lightning != null
+                        && cell == currentLightningCell
+                        && System.currentTimeMillis() - lightningStartTime < 3000;
 
-                g.fillRect(
-                    x,
-                    y,
-                    cellWidth,
-                    cellHeight
-                );
+                if (lightningActive) {
+                    g.setColor(LIGHTNING_COLOR);
+                } else {
+                    g.setColor(getCellColor(cell));
+                }
 
-                if (lightning != null &&
-                    cell == currentLightningCell &&
-                    System.currentTimeMillis() - lightningStartTime < 3000) {
+                g.fillRect(x, y, cellWidth, cellHeight);
+
+                if (lightningActive) {
 
                     drawCellImage(
                             g, lightningImage,
@@ -108,8 +115,6 @@ public class ForestPanel extends JPanel {
                 }
                 else {
                     if (!cell.hasTree()) {
-
-                        // Empty cell stays black
 
                     }
                     else if (cell.getTree().isBurning()) {
@@ -130,11 +135,19 @@ public class ForestPanel extends JPanel {
             }
         }
 
-        windVisualization.paintWindBorders(
-                g,
-                getWidth(),
-                getHeight()
-        );
+        windVisualization.paintWindBorders(g, getWidth(), getHeight());
+    }
+
+    private Color getCellColor(Cell cell) {
+        if (!cell.hasTree()) {
+            return EMPTY_COLOR;
+        }
+
+        if (cell.getTree().isBurning()) {
+            return FIRE_COLOR;
+        }
+
+        return TREE_COLOR;
     }
 
     private void drawCellImage(
