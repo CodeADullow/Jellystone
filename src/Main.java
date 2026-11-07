@@ -101,8 +101,17 @@ public class Main {
         }
 
         if (!forest.hasActiveFire()) {
-            forest.igniteRandomTree();
-            System.out.println("Random fire fallback used");
+            boolean fireStarted = forest.igniteRandomTree(
+                    cell -> cell.getWindExposure() > 0.0
+            );
+
+            if (!fireStarted) {
+                fireStarted = forest.igniteRandomTree();
+            }
+
+            if (fireStarted) {
+                System.out.println("Random fire fallback used");
+            }
         }
     }
 }

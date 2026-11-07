@@ -2,6 +2,7 @@ public class ForestFireTest {
 
     public static void main(String[] args) {
         testRandomFireIgnitesAvailableTree();
+        testLambdaIgnitionStrategy();
         testPeriodicFireEvent();
         testRandomFireHandlesEmptyForest();
 
@@ -30,6 +31,24 @@ public class ForestFireTest {
         forest.update();
         check(forest.hasActiveFire(),
                 "The thirtieth update should start a random fire");
+    }
+
+    private static void testLambdaIgnitionStrategy() {
+        Forest forest = new Forest(1, 2);
+        Cell[] cells = forest.getGrid()[0];
+        cells[0].plantTree(new Oak(0.5));
+        cells[1].plantTree(new Eucalyptus(0.5));
+
+        boolean fireStarted = forest.igniteRandomTree(
+                cell -> cell.getTree() instanceof Eucalyptus
+        );
+
+        check(fireStarted,
+                "The lambda strategy should find a matching tree");
+        check(!cells[0].getTree().isBurning(),
+                "The lambda strategy should leave the oak unchanged");
+        check(cells[1].getTree().isBurning(),
+                "The lambda strategy should ignite the eucalyptus");
     }
 
     private static void testRandomFireHandlesEmptyForest() {

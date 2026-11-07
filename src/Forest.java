@@ -7,6 +7,7 @@ import java.util.Random;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Forest implements Iterable<Cell> {
 
@@ -22,6 +23,7 @@ public class Forest implements Iterable<Cell> {
     private Wind wind;
 
     private Random random = new Random();
+    private TreeFactory treeFactory = new TreeFactory(random);
     private Cell[] worldCells = new Cell[100];
     private int worldCellCount;
     private int originX;
@@ -54,6 +56,14 @@ public class Forest implements Iterable<Cell> {
     @Override
     public Iterator<Cell> iterator() {
         return new ForestIterator();
+    }
+
+    private Stream<Cell> visibleCells() {
+        return Arrays.stream(grid).flatMap(Arrays::stream);
+    }
+
+    private Stream<Cell> parallelVisibleCells() {
+        return visibleCells().parallel();
     }
 
     private class ForestIterator implements Iterator<Cell> {
@@ -159,9 +169,7 @@ public class Forest implements Iterable<Cell> {
     }
 
     public Cell[] getVisibleCellsSorted() {
-        Cell[] cells = Arrays.stream(grid)
-                .flatMap(Arrays::stream)
-                .toArray(Cell[]::new);
+        Cell[] cells = visibleCells().toArray(Cell[]::new);
 
         CellHeapSort.sort(cells);
         return cells;
@@ -183,7 +191,7 @@ public class Forest implements Iterable<Cell> {
         if (random.nextDouble() < 0.8) {
             double spreadability =
                     0.3 + random.nextDouble() * 0.7;
-            cell.plantTree(createRandomTree(spreadability));
+            cell.plantTree(treeFactory.createRandom(spreadability));
         }
 
         if (worldCellCount == worldCells.length) {
@@ -198,15 +206,6 @@ public class Forest implements Iterable<Cell> {
         return cell;
     }
 
-    private Tree createRandomTree(double spreadability) {
-        if (random.nextBoolean()) {
-            return new Oak(spreadability);
-        }
-
-        return new Eucalyptus(spreadability);
-    }
-
-
     // Grid is simplified into a 2D array of cells, stream used to compile list of cells that match predicate, return count.
     public long countCells(Predicate<Cell> condition) {
         if (condition == null) {
@@ -215,16 +214,14 @@ public class Forest implements Iterable<Cell> {
             );
         }
 
-        return Arrays.stream(grid)
-                .flatMap(Arrays::stream)
+        return visibleCells()
                 .filter(condition)
                 .count();
     }
 
     // Groups visible trees by species and counts each group.
     public Map<String, Long> getTreePopulationByType() {
-        return Arrays.stream(grid)
-                .flatMap(Arrays::stream)
+        return parallelVisibleCells()
                 .filter(Cell::hasTree)
                 .map(Cell::getTree)
                 .collect(Collectors.groupingBy(
@@ -236,8 +233,7 @@ public class Forest implements Iterable<Cell> {
 
     // Stream filter
     public double getTotalFireIntensity() {
-        return Arrays.stream(grid)
-                .flatMap(Arrays::stream)
+        return visibleCells()
                 .filter(Cell::hasTree)
                 .map(Cell::getTree)
                 .filter(Tree::isBurning)
@@ -247,8 +243,7 @@ public class Forest implements Iterable<Cell> {
 
     // Partition trees into burning / non-burning groups.
     public Map<Boolean, Long> getTreeStateCounts() {
-        return Arrays.stream(grid)
-                .flatMap(Arrays::stream)
+        return visibleCells()
                 .filter(Cell::hasTree)
                 .map(Cell::getTree)
                 .collect(Collectors.partitioningBy(
@@ -258,9 +253,8 @@ public class Forest implements Iterable<Cell> {
     }
 
     public Map<String, DoubleSummaryStatistics> getTreeHealthByType() {
-        return Arrays.stream(grid)
-                .parallel()
-                .flatMap(Arrays::stream)
+        // This pipeline only reads tree data, so parallel work is safe here.
+        return parallelVisibleCells()
                 .filter(Cell::hasTree)
                 .map(Cell::getTree)
                 .collect(Collectors.groupingBy(
@@ -275,45 +269,39 @@ public class Forest implements Iterable<Cell> {
     }
 
     public boolean hasActiveFire() {
-        return countCells(
+        return visibleCells().anyMatch(
                 cell -> cell.hasTree()
                         && cell.getTree().isBurning()
-        ) > 0;
+        );
     }
 
     public boolean igniteRandomTree() {
-        int availableTrees = 0;
+        return igniteRandomTree(cell -> true);
+    }
 
-        for (Cell cell : this) {
-            if (cell.hasTree()
-                    && cell.getTree().isAlive()
-                    && !cell.getTree().isBurning()) {
-                availableTrees++;
-            }
+    public boolean igniteRandomTree(Predicate<Cell> selectionStrategy) {
+        if (selectionStrategy == null) {
+            throw new IllegalArgumentException(
+                    "Ignition selection strategy must not be null"
+            );
         }
 
-        if (availableTrees == 0) {
+        Predicate<Cell> availableTree = cell -> cell.hasTree()
+                && cell.getTree().isAlive()
+                && !cell.getTree().isBurning();
+
+        // Candidate discovery only reads cells; ignition happens afterwards.
+        Cell[] candidates = parallelVisibleCells()
+                .filter(availableTree.and(selectionStrategy))
+                .toArray(Cell[]::new);
+
+        if (candidates.length == 0) {
             return false;
         }
 
-        int selectedTree = random.nextInt(availableTrees);
-
-        for (Cell cell : this) {
-            if (!cell.hasTree()
-                    || !cell.getTree().isAlive()
-                    || cell.getTree().isBurning()) {
-                continue;
-            }
-
-            if (selectedTree == 0) {
-                cell.getTree().ignite();
-                return true;
-            }
-
-            selectedTree--;
-        }
-
-        return false;
+        Cell selectedCell = candidates[random.nextInt(candidates.length)];
+        selectedCell.getTree().ignite();
+        return true;
     }
 
 
@@ -329,7 +317,7 @@ public class Forest implements Iterable<Cell> {
 
         updatesSinceFireEvent++;
         if (updatesSinceFireEvent >= FIRE_EVENT_INTERVAL) {
-            igniteRandomTree();
+            startRandomFireEvent();
             updatesSinceFireEvent = 0;
         }
 
@@ -340,6 +328,24 @@ public class Forest implements Iterable<Cell> {
                 wind.randomize(this, random);
                 updatesSinceWindMove = 0;
             }
+        }
+    }
+
+    private void startRandomFireEvent() {
+        Predicate<Cell> selectionStrategy;
+        int strategyChoice = random.nextInt(3);
+
+        if (strategyChoice == 0) {
+            selectionStrategy = cell ->
+                    cell.getTree().getSpreadability() >= 0.7;
+        } else if (strategyChoice == 1) {
+            selectionStrategy = cell -> cell.getWindExposure() > 0.0;
+        } else {
+            selectionStrategy = cell -> true;
+        }
+
+        if (!igniteRandomTree(selectionStrategy)) {
+            igniteRandomTree();
         }
     }
 
