@@ -26,6 +26,7 @@ public class ForestPanel extends JPanel {
         this.forest = forest;
         this.lightning = lightning;
         this.windVisualization = new WindVisualization(forest);
+        setBackground(Color.BLACK);
 
         System.out.println(new java.io.File("images/tree.png").exists());
         System.out.println(new java.io.File("images/fire.png").exists());
@@ -66,6 +67,12 @@ public class ForestPanel extends JPanel {
         Cell[][] grid = forest.getGrid();
         int rowCount = grid.length;
         int columnCount = grid[0].length;
+        Rectangle gridBounds = calculateGridBounds(
+                getWidth(),
+                getHeight(),
+                rowCount,
+                columnCount
+        );
 
         Cell currentLightningCell = null;
 
@@ -83,10 +90,14 @@ public class ForestPanel extends JPanel {
             for (int col = 0; col < grid[row].length; col++) {
 
                 Cell cell = grid[row][col];
-                int x = col * getWidth() / columnCount;
-                int nextX = (col + 1) * getWidth() / columnCount;
-                int y = row * getHeight() / rowCount;
-                int nextY = (row + 1) * getHeight() / rowCount;
+                int x = gridBounds.x
+                        + col * gridBounds.width / columnCount;
+                int nextX = gridBounds.x
+                        + (col + 1) * gridBounds.width / columnCount;
+                int y = gridBounds.y
+                        + row * gridBounds.height / rowCount;
+                int nextY = gridBounds.y
+                        + (row + 1) * gridBounds.height / rowCount;
                 int cellWidth = nextX - x;
                 int cellHeight = nextY - y;
 
@@ -136,6 +147,39 @@ public class ForestPanel extends JPanel {
         }
 
         windVisualization.paintWindBorders(g, getWidth(), getHeight());
+    }
+
+    // Prevents grid stretching; center and scale grid to panel.
+    static Rectangle calculateGridBounds(
+            int panelWidth,
+            int panelHeight,
+            int rows,
+            int columns) {
+
+        if (panelWidth <= 0 || panelHeight <= 0
+                || rows <= 0 || columns <= 0) {
+            return new Rectangle();
+        }
+
+        double cellSize = Math.min(
+                panelWidth / (double) columns,
+                panelHeight / (double) rows
+        );
+        int gridWidth = Math.min(
+                panelWidth,
+                (int) Math.round(cellSize * columns)
+        );
+        int gridHeight = Math.min(
+                panelHeight,
+                (int) Math.round(cellSize * rows)
+        );
+
+        return new Rectangle(
+                (panelWidth - gridWidth) / 2,
+                (panelHeight - gridHeight) / 2,
+                gridWidth,
+                gridHeight
+        );
     }
 
     private Color getCellColor(Cell cell) {

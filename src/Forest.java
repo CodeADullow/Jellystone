@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 public class Forest implements Iterable<Cell> {
 
     private static final int WIND_MOVE_INTERVAL = 10;
+    private static final int FIRE_EVENT_INTERVAL = 30;
 
     private Cell[][] grid;
 
@@ -26,6 +27,7 @@ public class Forest implements Iterable<Cell> {
     private int originX;
     private int originY;
     private int updatesSinceWindMove;
+    private int updatesSinceFireEvent;
     private SimulationState simulationState = new RunningState();
 
     public Forest(int rows, int columns) {
@@ -122,6 +124,7 @@ public class Forest implements Iterable<Cell> {
         originX = 0;
         originY = 0;
         updatesSinceWindMove = 0;
+        updatesSinceFireEvent = 0;
         worldCells = new Cell[Math.max(100, rows * columns)];
         worldCellCount = 0;
 
@@ -271,6 +274,48 @@ public class Forest implements Iterable<Cell> {
                 ));
     }
 
+    public boolean hasActiveFire() {
+        return countCells(
+                cell -> cell.hasTree()
+                        && cell.getTree().isBurning()
+        ) > 0;
+    }
+
+    public boolean igniteRandomTree() {
+        int availableTrees = 0;
+
+        for (Cell cell : this) {
+            if (cell.hasTree()
+                    && cell.getTree().isAlive()
+                    && !cell.getTree().isBurning()) {
+                availableTrees++;
+            }
+        }
+
+        if (availableTrees == 0) {
+            return false;
+        }
+
+        int selectedTree = random.nextInt(availableTrees);
+
+        for (Cell cell : this) {
+            if (!cell.hasTree()
+                    || !cell.getTree().isAlive()
+                    || cell.getTree().isBurning()) {
+                continue;
+            }
+
+            if (selectedTree == 0) {
+                cell.getTree().ignite();
+                return true;
+            }
+
+            selectedTree--;
+        }
+
+        return false;
+    }
+
 
 
 
@@ -281,6 +326,12 @@ public class Forest implements Iterable<Cell> {
     private void performUpdate() {
         spreadFire();
         advanceBurningTrees();
+
+        updatesSinceFireEvent++;
+        if (updatesSinceFireEvent >= FIRE_EVENT_INTERVAL) {
+            igniteRandomTree();
+            updatesSinceFireEvent = 0;
+        }
 
         if (wind != null) {
             updatesSinceWindMove++;

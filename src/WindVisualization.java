@@ -38,6 +38,12 @@ public class WindVisualization extends JPanel {
 
         int rowCount = grid.length;
         int columnCount = grid[0].length;
+        Rectangle gridBounds = ForestPanel.calculateGridBounds(
+                width,
+                height,
+                rowCount,
+                columnCount
+        );
 
         for (int row = 0; row < grid.length; row++) {
 
@@ -47,10 +53,14 @@ public class WindVisualization extends JPanel {
                     continue;
                 }
 
-                int x = col * width / columnCount;
-                int nextX = (col + 1) * width / columnCount;
-                int y = row * height / rowCount;
-                int nextY = (row + 1) * height / rowCount;
+                int x = gridBounds.x
+                        + col * gridBounds.width / columnCount;
+                int nextX = gridBounds.x
+                        + (col + 1) * gridBounds.width / columnCount;
+                int y = gridBounds.y
+                        + row * gridBounds.height / rowCount;
+                int nextY = gridBounds.y
+                        + (row + 1) * gridBounds.height / rowCount;
                 int cellWidth = nextX - x;
                 int cellHeight = nextY - y;
 

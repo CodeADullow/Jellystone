@@ -41,7 +41,6 @@ public class ControlPanel extends JPanel {
         this.resetAction = resetAction;
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setPreferredSize(new Dimension(180, 0));
         setBackground(new Color(235, 235, 235));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
@@ -90,6 +89,9 @@ public class ControlPanel extends JPanel {
         addLegendItem("Wind border", ForestPanel.WIND_COLOR);
 
         windPanel = createWindPanel();
+
+        Dimension naturalSize = getPreferredSize();
+        setPreferredSize(new Dimension(210, naturalSize.height));
         refresh();
     }
 

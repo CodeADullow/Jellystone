@@ -55,7 +55,8 @@ public class Main {
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
         );
         controlScroll.setBorder(null);
-        controlScroll.setPreferredSize(new Dimension(200, 0));
+        controlScroll.setPreferredSize(new Dimension(230, 0));
+        controlScroll.getVerticalScrollBar().setUnitIncrement(16);
         contentPanel.add(
                 controlScroll,
                 BorderLayout.EAST
@@ -67,12 +68,13 @@ public class Main {
 
         window.setContentPane(contentPanel);
 
-        window.setSize(900, 600);
+        window.setSize(1000, 720);
         window.setMinimumSize(new Dimension(650, 450));
         window.setResizable(true);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.setLocationRelativeTo(null);
         window.setVisible(true);
+        controlScroll.getVerticalScrollBar().setValue(0);
 
         Timer timer = new Timer(500, event -> {
 
@@ -96,6 +98,11 @@ public class Main {
             System.out.println(
                     "Ignition failed: " + exception.getMessage()
             );
+        }
+
+        if (!forest.hasActiveFire()) {
+            forest.igniteRandomTree();
+            System.out.println("Random fire fallback used");
         }
     }
 }
